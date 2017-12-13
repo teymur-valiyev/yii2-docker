@@ -1,0 +1,59 @@
+version: '2'
+services:
+  nginx:
+    image: nginx:1.9
+    hostname: yii2.vm
+    ports:
+      - 80:80
+    volumes_from:
+      - nginxdata
+    links:
+      - db
+      - phpfpm
+
+  phpfpm:
+    build:
+      context: ./docker/phpfpm
+      dockerfile: Dockerfile
+    ports:
+      - 9000
+    links:
+      - db
+    env_file:
+      - ./docker/phpfpm/global.env
+    volumes_from:
+      - phpfpmdata
+
+  db:
+    image: mysql:5.6
+    hostname: db.yii2.vm
+    ports:
+      - 3306
+    volumes_from:
+      - dbdata
+    environment:
+      MYSQL_ROOT_PASSWORD: yii2
+      MYSQL_USER: yii2
+      MYSQL_PASSWORD: yii2
+      MYSQL_DATABASE: yii2
+
+  nginxdata:
+    image: tianon/true
+    volumes:
+      - ./www:/var/www/yii
+      - ./docker/nginx/etc/conf.d:/etc/nginx/conf.d
+
+  phpfpmdata:
+    image: tianon/true
+    volumes:
+      - ./www:/var/www/yii
+      - ./docker/phpfpm/etc/php-fpm.ini:/usr/local/etc/php/conf.d/yii-website.ini
+      - ./docker/phpfpm/etc/php-fpm.conf:/usr/local/etc/php-fpm.conf
+      - ./docker/phpfpm/etc/php-mail.ini:/usr/local/etc/php/conf.d/yii-mail.ini
+      - ./docker/phpfpm/etc/php-xdebug.ini:/usr/local/etc/php/conf.d/yii-xdebug-settings.ini
+      - ./docker/phpfpm/etc/auth.json:/root/.composer/auth.json
+
+  dbdata:
+    image: tianon/true
+    volumes:
+      - ./docker/db/backup/:/var/lib/mysql
